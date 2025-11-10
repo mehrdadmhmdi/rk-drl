@@ -283,15 +283,15 @@ def RK_DRL(
     # Pack cache for downstream analysis / debugging
     # ------------------------------------------------------------------------------
     pre_computed_matrices = {
-        "Z": Z,
+        "Z_grid": Z,
         "k_sa": k_sa,
         "K_sa": K_sa,
         "K_sa_prime": K_sa_prime,
         "K_Z": K_Z,
-        "H_emp": H_emp,
-        "G_emp": G_emp,
-        "Phi_emp": Phi_emp,
-        "Gamma_sa_emp": Gamma_sa_emp,
+        "H": H_emp,
+        "G": G_emp,
+        "Phi": Phi_emp,
+        "Gamma_sa": Gamma_sa_emp,
     }
 
     if verbose:
