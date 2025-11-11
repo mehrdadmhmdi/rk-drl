@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rk-drl"
+version = "0.1.0"
+description = "RKHS-based Offline Distributional RL"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = []
+
+# CLI: installs an executable named `rk-drl`
+[project.scripts]
+rk-drl = "rk_drl.api:cli"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
