@@ -5,12 +5,27 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "rk-drl"
 version = "0.1.0"
-description = "RKHS-based Offline Distributional RL"
+description = "Offline multi-dimensional distributional RL via RKHS embeddings"
 readme = "README.md"
-requires-python = ">=3.9"
-dependencies = []
+requires-python = ">=3.10"
+authors = [{name="Mehrdad Mohammadi", email="mohammadi.mehrdad93@gmail.com"}]
+dependencies = [
+  "numpy>=1.24",
+  "scipy>=1.11",
+  "torch>=2.2",            # users choose CUDA/CPU build per PyTorch docs
+  "matplotlib>=3.8",
+  "pyyaml>=6.0.1"
+]
 
-# CLI: installs an executable named `rk-drl`
+[project.optional-dependencies]
+plots = [
+  "seaborn>=0.13"
+]
+dev = [
+  "pytest>=7",
+  "ruff>=0.5"
+]
+
 [project.scripts]
 rk-drl = "rk_drl.api:cli"
 
