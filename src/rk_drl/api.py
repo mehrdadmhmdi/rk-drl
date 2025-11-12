@@ -17,6 +17,7 @@ def estimate_embedding(
     nu, length_scale, sigma,
     gamma_val, lambda_reg,
     num_grid_points,
+    # optional (kept identical to RK_DRL defaults)
     hull_expand_factor: float = 1.8,
     lr: float = 1e-3, weight_decay: float = 0.0, num_steps: int = 5000,
     FP_penalty_lambda: float = 1e2,
@@ -103,9 +104,9 @@ def build_plot_config(
         'target_policy': str(target_policy),
     }
 
-# ========= INDIVIDUAL PLOT FUNCTIONS =========
+# ========= INDIVIDUAL PLOT / RECOVERY HELPERS =========
 def plot_bellman_error(history_be: list, outdir: str = "./plots"):
-    tool = RecoverAndPlot({})  # safe due to robust _footer
+    tool = RecoverAndPlot({})
     os.makedirs(outdir, exist_ok=True)
     tool.plot_bellman_error(history_be, outdir=outdir)
 
@@ -138,57 +139,26 @@ def compute_marginals_from_beta(
     )
 
 def plot_densities(
-    *, fz: torch.Tensor, Z_true_tensor: Optional[torch.Tensor], r_obs: Optional[torch.Tensor],
-    Z_grid: torch.Tensor, grid_dict: Dict[str, Any], outdir: str = "./plots"
+    *, fz: torch.Tensor, grid_dict: Dict[str, Any], config: Dict[str, Any], outdir: str = "./plots"
 ):
-    tool = RecoverAndPlot({})
+    tool = RecoverAndPlot(config)  # needs reward_dim for subplot count
     os.makedirs(outdir, exist_ok=True)
-    # estimates-only signature
     tool.plot_densities(fz, grid_dict, outdir=outdir)
 
-def compute_L2_marginal_error(
-    *, fz: torch.Tensor, Z_true_tensor: Optional[torch.Tensor], grid_dict: Dict[str, Any], config: Dict[str, Any]
-):
-    return RecoverAndPlot.compute_L2_distance(
-        fz, (Z_true_tensor[:, :config['reward_dim']] if Z_true_tensor is not None else None),
-        grid_dict, nu=config['nu'], length_scale=config['length_scale'], sigma_k=config['sigma_k']
-    )
-
 def mean_embedding_all(
-    *, beta_full: torch.Tensor, Z_grid: torch.Tensor, Z_true_tensor: torch.Tensor | None, config: Dict[str, Any],
-    max_samples: int = 100000, do_joint_dims=(0,1), n1: int = 120, n2: int = 120, outdir: str = "./plots"
+    *, beta_full: torch.Tensor, Z_grid: torch.Tensor, config: Dict[str, Any],
+    do_joint_dims=(0,1), n1: int = 120, n2: int = 120, margin_factor: float = 0.35, outdir: str = "./plots"
 ):
     tool = RecoverAndPlot(config)
     return tool.mean_embedding_all(
-        beta_full, Z_grid, (Z_true_tensor if Z_true_tensor is not None else Z_grid),
+        beta_full, Z_grid,
         nu=config['nu'], length_scale=config['length_scale'], sigma_k=config['sigma_k'],
-        max_samples=max_samples, do_joint_dims=do_joint_dims, n1=n1, n2=n2, outdir=outdir
+        do_joint_dims=do_joint_dims, n1=n1, n2=n2, margin_factor=margin_factor, outdir=outdir
     )
 
-def plot_bland_altman(cache: Dict[str, Any], outdir: str = "./plots"):
-    tool = RecoverAndPlot({})
-    tool.plot_bland_altman(cache, outdir=outdir)
-
-def plot_quantile_calibration(cache: Dict[str, Any], outdir: str = "./plots"):
-    tool = RecoverAndPlot({})
-    tool.plot_quantile_calibration(cache, outdir=outdir)
-
-def plot_error_vs_distance_from_mode(cache: Dict[str, Any], dims=(0,1), outdir: str = "./plots"):
-    tool = RecoverAndPlot({})
-    tool.plot_error_vs_distance_from_mode(cache, dims=dims, outdir=outdir)
-
-def plot_operator_check_2d(cache: Dict[str, Any], *, r_obs: torch.Tensor | None, gamma: float, dims=(0,1), outdir: str = "./plots"):
+def plot_operator_check_2d(cache: Dict[str, Any], *, r_obs: torch.Tensor, gamma: float, dims=(0,1), outdir: str = "./plots"):
     tool = RecoverAndPlot({})
     tool.plot_operator_check_2d(cache, R=r_obs, gamma=gamma, dims=dims, outdir=outdir)
-
-def plot_error_heatmap(cache: Dict[str, Any], dims=(0,1), outdir: str = "./plots"):
-    tool = RecoverAndPlot({})
-    tool.plot_error_heatmap(cache, dims=dims, outdir=outdir)
-
-def plot_statistics(cache: Dict[str, Any], Z_ref: torch.Tensor, *, config: Dict[str, Any], dim: int = 0, outdir: str = "./plots"):
-    tool = RecoverAndPlot({})
-    tool.plot_statistics(cache, Z_ref, lambda_rec=config['lambda_rec'], nu=config['nu'],
-                         length_scale=config['length_scale'], sigma=config['sigma_k'], dim=dim, outdir=outdir)
 
 def save_weights_and_grid(beta_full: torch.Tensor, Z_grid: torch.Tensor, run_id: int, mu_dir="./mu", data_dir="./data"):
     os.makedirs(mu_dir, exist_ok=True); os.makedirs(data_dir, exist_ok=True)
@@ -197,10 +167,21 @@ def save_weights_and_grid(beta_full: torch.Tensor, Z_grid: torch.Tensor, run_id:
     np.savetxt(os.path.join(mu_dir, f"weights_{run_id}.csv"),
                beta_full.detach().cpu().view(-1).numpy(), delimiter=",", fmt="%.8e")
 
-# ========= CLI (optional) =========
+# ========= CLI (estimate-only) =========
 def _shape(x): return tuple(x.shape) if hasattr(x, "shape") else x
 
 def cli():
+    """
+    stdin JSON:
+    {
+      "fit": { ... RK_DRL kwargs ... },
+      "plots": {
+        "config": { ... build_plot_config kwargs ... },
+        "r_obs": null or array,
+        "what": ["bellman","loss","beta","marginal","mean","op2d"]
+      }
+    }
+    """
     cfg = json.load(sys.stdin)
     B, hist_obj, hist_be, pre = estimate_embedding(**cfg["fit"])
     print("OK fit:", {"B": _shape(B), "hist_obj": len(hist_obj), "hist_be": len(hist_be),
@@ -209,26 +190,22 @@ def cli():
     if "plots" in cfg:
         pc = cfg["plots"]
         config = build_plot_config(**pc["config"])
-        r_obs  = (torch.as_tensor(pc["r_obs"])  if pc.get("r_obs")  is not None else None)
-        Z_true = (torch.as_tensor(pc["Z_true"]) if pc.get("Z_true") is not None else None)
+        r_obs  = (torch.as_tensor(pc["r_obs"]) if pc.get("r_obs") is not None else None)
 
         what = set(pc.get("what", []))
         if "bellman" in what: plot_bellman_error(hist_be)
         if "loss"    in what: plot_total_loss(hist_obj)
 
-        if {"beta","marginal","mean","stats"} & what:
-            beta, Zg = recover_joint_beta(B=B, k_sa=pre["k_sa"], Z_grid=pre["Z_grid"], Phi=pre["Phi"], K_sa=pre["K_sa"], config=config)
+        if {"beta","marginal","mean","op2d"} & what:
+            beta, Zg = recover_joint_beta(B=B, k_sa=pre["k_sa"], Z_grid=pre["Z_grid"],
+                                          Phi=pre["Phi"], K_sa=pre["K_sa"], config=config)
             print("OK beta:", {"beta": _shape(beta), "Zg": _shape(Zg)})
 
             if "marginal" in what:
                 fz, grid = compute_marginals_from_beta(beta_full=beta, Z_grid=Zg, config=config)
-                plot_densities(fz=fz, Z_true_tensor=Z_true, r_obs=r_obs, Z_grid=Zg, grid_dict=grid)
+                plot_densities(fz=fz, grid_dict=grid, config=config)
 
-            if {"mean","ba","qcal","evs","op2d","heat","stats"} & what:
-                cache, _ = mean_embedding_all(beta_full=beta, Z_grid=Zg, Z_true_tensor=Z_true, config=config)
-                if "ba"    in what: plot_bland_altman(cache)
-                if "qcal"  in what: plot_quantile_calibration(cache)
-                if "evs"   in what: plot_error_vs_distance_from_mode(cache)
-                if "op2d"  in what: plot_operator_check_2d(cache, r_obs=r_obs, gamma=config["gamma_val"])
-                if "heat"  in what: plot_error_heatmap(cache)
-                if "stats" in what: plot_statistics(cache, (Z_true if Z_true is not None else Zg), config=config)
+            if "mean" in what or "op2d" in what:
+                cache, _ = mean_embedding_all(beta_full=beta, Z_grid=Zg, config=config)
+                if "op2d" in what and r_obs is not None:
+                    plot_operator_check_2d(cache, r_obs=r_obs, gamma=config["gamma_val"])

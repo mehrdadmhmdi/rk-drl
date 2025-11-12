@@ -173,7 +173,7 @@ class RecoverAndPlot:
     # -------------------- plots (estimate-only) --------------------
     def plot_densities(self, fz, grid_dict, outdir="./plots/"):
         """
-        Signature changed: drop Z_true, r, Z. Only plot estimated marginals.
+        plot estimated marginals.
         """
         d = self.cfg['reward_dim']
         fig, axes = plt.subplots(1, d, figsize=(6 * d, 6))
@@ -343,7 +343,7 @@ class RecoverAndPlot:
         plt.close()
 
     # ========== Orchestrator (estimate-only) =========================
-    def mean_embedding_all(self, beta, Z_grid, *,  # signature changed: removed Z_true
+    def mean_embedding_all(self, beta, Z_grid, *,
                            nu, length_scale, sigma_k,
                            do_joint_dims=(0, 1), n1=120, n2=120, margin_factor=0.35,
                            outdir="./plots/"):
