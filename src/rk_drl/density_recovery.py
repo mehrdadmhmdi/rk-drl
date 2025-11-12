@@ -51,29 +51,29 @@ class RecoverAndPlot:
             sig_str = sig
 
         # text fields
-        tp = gj('target_policy', 'N/A')
+        tp   = gj('target_policy', 'N/A')
         sdim = gj('state_dim', 'N/A')
         rdim = gj('reward_dim', 'N/A')
         adim = gj('action_dim', 'N/A')
 
-        lr = gj('lr', 'N/A')
-        lam = gj('lambda_reg', 'N/A')
-        fpc = gj('fixed_point_constraint', 'N/A')
-        fpl = gj('FP_penalty_lambda', 'N/A')
+        lr   = gj('lr', 'N/A')
+        lam  = gj('lambda_reg', 'N/A')
+        fpc  = gj('fixed_point_constraint', 'N/A')
+        fpl  = gj('FP_penalty_lambda', 'N/A')
         lrec = gj('lambda_rec', 'N/A')
-        bw = gj('bandwidth', 'N/A')
-        hef = gj('hull_expand_factor', 'N/A')
-        sst = gj('s_star', 'N/A')
-        ast = gj('a_star', 'N/A')
+        bw   = gj('bandwidth', 'N/A')
+        hef  = gj('hull_expand_factor', 'N/A')
+        sst  = gj('s_star', 'N/A')
+        ast  = gj('a_star', 'N/A')
 
         base = (
-            f"Target Policy: {tp}\n"
+            f"Target Policy: {tp}"
             rf" Matérn($\nu,\ell,\sigma$)=({nu},{ell},{sig_str}) | "
             f"dims(S,R,A)=({sdim},{rdim},{adim})"
             f"\nlr={lr} | Training Reg-$\\lambda$={lam} | "
             f"FP_constraint={fpc} | $FP_\\lambda$={fpl} | "
             f"Recovery Reg-$\\lambda$={lrec}"
-            f"\nDensity G-Bandwidth={bw} | Z grid expand factor = {hef}"
+            f"Density G-Bandwidth={bw} | Z grid expand factor = {hef}"
             f"\n(s*,a*)=({sst}, {ast})"
         )
         return base + (f" | {extra}" if extra else "")
@@ -309,7 +309,7 @@ class RecoverAndPlot:
         surf1 = ax1.plot_surface(Xg, Yg, Z1, rcount=100, ccount=100,
                                  cmap="viridis", linewidth=0, antialiased=True)
         ax1.set_title(r"Estimated mean embedding $\hat{\mu}$")
-        ax1.set_xlabel(f"Z[{dims[0]}]"); ax1.set_ylabel(f"Z[{dims[1]}]")
+        ax1.set_xlabel(f"Z[{dims[0]+1}]"); ax1.set_ylabel(f"Z[{dims[1]+1}]")
         ax1.zaxis.set_rotate_label(False)
         ax1.set_zlabel(r"$\hat{\mu}$", rotation=90, labelpad=8)
         for lab in ax1.get_xticklabels() + ax1.get_yticklabels() + ax1.get_zticklabels():
@@ -336,8 +336,8 @@ class RecoverAndPlot:
         c1 = ax1.contourf(Z1, Z2, EH, levels=levels, cmap="Blues")
         fig.colorbar(c1, ax=ax1)
         ax1.set(title=fr"$\hat\mu$ contour", xlabel=f"Z[{dims[0]+1}]", ylabel=f"Z[{dims[1]+1}]")
-        plt.subplots_adjust(bottom=0.35)
-        plt.figtext(0.5, 0.02, self._footer(), ha="center", fontsize=10, wrap=True)
+        plt.subplots_adjust(bottom=0.45)
+        plt.figtext(0.5, 0.02, self._footer(), ha="center", fontsize=8, wrap=True)
         fname = self._fname(f"mu2D")
         plt.savefig(f"{outdir}/{fname}", dpi=600)
         plt.close()
