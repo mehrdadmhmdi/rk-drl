@@ -112,12 +112,12 @@ def build_plot_config(
 
 
 # ========= INDIVIDUAL PLOT FUNCTIONS (each does one thing) =========
-def plot_bellman_error(history_be: list, outdir: str = "./plots/ind_plots"):
+def plot_bellman_error(history_be: list, outdir: str = "./plots"):
     tool = RecoverAndPlot({})
     os.makedirs(outdir, exist_ok=True)
     tool.plot_bellman_error(history_be, outdir=outdir)
 
-def plot_total_loss(history_obj: list, outdir: str = "./plots/ind_plots"):
+def plot_total_loss(history_obj: list, outdir: str = "./plots"):
     tool = RecoverAndPlot({})
     os.makedirs(outdir, exist_ok=True)
     tool.plot_total_loss(history_obj, outdir=outdir)
@@ -147,11 +147,12 @@ def compute_marginals_from_beta(
 
 def plot_densities(
     *, fz: torch.Tensor, Z_true_tensor: Optional[torch.Tensor], r_obs: Optional[torch.Tensor],
-    Z_grid: torch.Tensor, grid_dict: Dict[str, Any], outdir: str = "./plots/ind_plots"
+    Z_grid: torch.Tensor, grid_dict: Dict[str, Any], outdir: str = "./plots"
 ):
     tool = RecoverAndPlot({})
     os.makedirs(outdir, exist_ok=True)
-    tool.plot_densities(fz, Z_true_tensor, r_obs, Z_grid, grid_dict, outdir=outdir)
+    # New 3-arg plotting API: only estimated densities
+    tool.plot_densities(fz, grid_dict, outdir=outdir)
 
 def compute_L2_marginal_error(
     *, fz: torch.Tensor, Z_true_tensor: Optional[torch.Tensor], grid_dict: Dict[str, Any], config: Dict[str, Any]
@@ -163,7 +164,7 @@ def compute_L2_marginal_error(
 
 def mean_embedding_all(
     *, beta_full: torch.Tensor, Z_grid: torch.Tensor, Z_true_tensor: torch.Tensor | None, config: Dict[str, Any],
-    max_samples: int = 100000, do_joint_dims=(0,1), n1: int = 120, n2: int = 120, outdir: str = "./plots/ind_plots"
+    max_samples: int = 100000, do_joint_dims=(0,1), n1: int = 120, n2: int = 120, outdir: str = "./plots"
 ):
     tool = RecoverAndPlot(config)
     return tool.mean_embedding_all(
@@ -172,27 +173,27 @@ def mean_embedding_all(
         max_samples=max_samples, do_joint_dims=do_joint_dims, n1=n1, n2=n2, outdir=outdir
     )
 
-def plot_bland_altman(cache: Dict[str, Any], outdir: str = "./plots/ind_plots"):
+def plot_bland_altman(cache: Dict[str, Any], outdir: str = "./plots"):
     tool = RecoverAndPlot({})
     tool.plot_bland_altman(cache, outdir=outdir)
 
-def plot_quantile_calibration(cache: Dict[str, Any], outdir: str = "./plots/ind_plots"):
+def plot_quantile_calibration(cache: Dict[str, Any], outdir: str = "./plots"):
     tool = RecoverAndPlot({})
     tool.plot_quantile_calibration(cache, outdir=outdir)
 
-def plot_error_vs_distance_from_mode(cache: Dict[str, Any], dims=(0,1), outdir: str = "./plots/ind_plots"):
+def plot_error_vs_distance_from_mode(cache: Dict[str, Any], dims=(0,1), outdir: str = "./plots"):
     tool = RecoverAndPlot({})
     tool.plot_error_vs_distance_from_mode(cache, dims=dims, outdir=outdir)
 
-def plot_operator_check_2d(cache: Dict[str, Any], *, r_obs: torch.Tensor | None, gamma: float, dims=(0,1), outdir: str = "./plots/ind_plots"):
+def plot_operator_check_2d(cache: Dict[str, Any], *, r_obs: torch.Tensor | None, gamma: float, dims=(0,1), outdir: str = "./plots"):
     tool = RecoverAndPlot({})
     tool.plot_operator_check_2d(cache, R=r_obs, gamma=gamma, dims=dims, outdir=outdir)
 
-def plot_error_heatmap(cache: Dict[str, Any], dims=(0,1), outdir: str = "./plots/ind_plots"):
+def plot_error_heatmap(cache: Dict[str, Any], dims=(0,1), outdir: str = "./plots"):
     tool = RecoverAndPlot({})
     tool.plot_error_heatmap(cache, dims=dims, outdir=outdir)
 
-def plot_statistics(cache: Dict[str, Any], Z_ref: torch.Tensor, *, config: Dict[str, Any], dim: int = 0, outdir: str = "./plots/ind_plots"):
+def plot_statistics(cache: Dict[str, Any], Z_ref: torch.Tensor, *, config: Dict[str, Any], dim: int = 0, outdir: str = "./plots"):
     tool = RecoverAndPlot({})
     tool.plot_statistics(cache, Z_ref, lambda_rec=config['lambda_rec'], nu=config['nu'],
                          length_scale=config['length_scale'], sigma=config['sigma_k'], dim=dim, outdir=outdir)
@@ -241,6 +242,7 @@ def cli():
 
             if "marginal" in what:
                 fz, grid = compute_marginals_from_beta(beta_full=beta, Z_grid=Zg, config=config)
+                # Wrapper now ignores Z_true/r_obs/Z_grid
                 plot_densities(fz=fz, Z_true_tensor=Z_true, r_obs=r_obs, Z_grid=Zg, grid_dict=grid)
 
             if "mean" in what or "ba" in what or "qcal" in what or "evs" in what or "op2d" in what or "heat" in what or "stats" in what:
