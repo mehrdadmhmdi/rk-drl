@@ -16,7 +16,7 @@ def estimate_embedding(
     *,
     s0, s1, a0, a1,
     s_star, a_star,
-    r0,
+    r,
     target_p_choice, target_p_params,
     nu, length_scale, sigma,
     gamma_val, lambda_reg,
