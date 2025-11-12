@@ -99,7 +99,7 @@ class RecoverAndPlot:
         beta = self._beta_full(B, k_sa, phi, Z_grid, K_sa,
                                method=method, nu=nu, length_scale=length_scale,
                                sigma_k=sigma_k, lambda_reg=lambda_reg)
-        self.save_csv(beta.detach().cpu().numpy(), f"weights_{self.cfg['data_ID']}.csv", base_path="./mu")
+        self.save_csv(beta.detach().cpu().numpy(), f"weights.csv", base_path="./mu")
         return beta, Z_grid
 
     # -------------------- evaluation (no re-solves) --------------------
@@ -206,7 +206,7 @@ class RecoverAndPlot:
         Kgg = matern_kernel(Z_grid, Z_grid, nu=nu, length_scale=length_scale, sigma=sigma_k)
         mu_hat = (Kgg @ beta.view(-1)).contiguous()
 
-        self.save_csv(mu_hat.detach().cpu().numpy(), f"mu_hat_{self.cfg['data_ID']}.csv", base_path="./mu")
+        self.save_csv(mu_hat.detach().cpu().numpy(), f"mu_hat.csv", base_path="./mu")
 
         return {
             "Z_grid": Z_grid, "beta": beta, "mu_hat": mu_hat,
@@ -242,8 +242,7 @@ class RecoverAndPlot:
         mu_hat2 = (Kqg @ beta.view(-1)).view(n2, n1).contiguous()
 
         # Save slice CSV (hat only)
-        did = self.cfg['data_ID']
-        self.save_csv(mu_hat2.detach().cpu().numpy(), f"mu2D_hat_{did}_dims{j}{k}.csv", base_path="./mu")
+        self.save_csv(mu_hat2.detach().cpu().numpy(), f"mu2D_hat_dims{j}{k}.csv", base_path="./mu")
         return mu_hat2, Xg, Yg
 
     def plot_mean_embedding_3d_slice(self, cache, *, dims=(0, 1), ref="median",
@@ -290,7 +289,7 @@ class RecoverAndPlot:
         cbar.set_label("value", fontsize=12)
         plt.subplots_adjust(bottom=0.25)
         plt.figtext(0.5, 0.02, self._footer(), ha="center", fontsize=10, wrap=True)
-        fname = self._fname(f"mu_3D_{self.cfg['data_ID']}")
+        fname = self._fname(f"mu_3D")
         plt.savefig(os.path.join(outdir, fname), dpi=400)
         plt.close()
         print(f"Saved {os.path.join(outdir, fname)}")
@@ -308,7 +307,7 @@ class RecoverAndPlot:
         ax1.set(title=fr"$\hat\mu$ contour", xlabel=f"Z[{dims[0]+1}]", ylabel=f"Z[{dims[1]+1}]")
         plt.subplots_adjust(bottom=0.35)
         plt.figtext(0.5, 0.02, self._footer(), ha="center", fontsize=10, wrap=True)
-        fname = self._fname(f"mu2D_{self.cfg['data_ID']}")
+        fname = self._fname(f"mu2D")
         plt.savefig(f"{outdir}/{fname}", dpi=600)
         plt.close()
 
@@ -361,7 +360,7 @@ class RecoverAndPlot:
         fig.suptitle("Estimated Mean Embedding (per dimension)")
         plt.subplots_adjust(bottom=0.35)
         plt.figtext(0.5, 0.02, self._footer(), ha="center", fontsize=10, wrap=True)
-        fname = self._fname(f"mu_{self.cfg['data_ID']}")
+        fname = self._fname(f"mu")
         plt.savefig(f"{outdir}/{fname}", dpi=600); plt.close()
 
     # ---------- All runs (estimate-only) ----------
@@ -456,9 +455,9 @@ class RecoverAndPlot:
         RZ = (A - B)
 
         fig, axs = plt.subplots(1,3, figsize=(14,4))
-        im0 = axs[0].pcolormesh(Xn, Yn, A, cmap="Blues", shading="auto"); fig.colorbar(im0, ax=axs[0]); axs[0].set(title="μ̂ (slice)")
-        im1 = axs[1].pcolormesh(Xn, Yn, B, cmap="Greens", shading="auto"); fig.colorbar(im1, ax=axs[1]); axs[1].set(title="T μ̂ (slice)")
-        im2 = axs[2].pcolormesh(Xn, Yn, np.abs(RZ), cmap="magma", shading="auto"); fig.colorbar(im2, ax=axs[2]); axs[2].set(title="|μ̂ − T μ̂|")
+        im0 = axs[0].pcolormesh(Xn, Yn, A, cmap="Blues", shading="auto"); fig.colorbar(im0, ax=axs[0]); axs[0].set(title=rf"$\widehat \mu$ (slice)")
+        im1 = axs[1].pcolormesh(Xn, Yn, B, cmap="Greens", shading="auto"); fig.colorbar(im1, ax=axs[1]); axs[1].set(title="$T\widehat \mu$  (slice)")
+        im2 = axs[2].pcolormesh(Xn, Yn, np.abs(RZ), cmap="magma", shading="auto"); fig.colorbar(im2, ax=axs[2]); axs[2].set(title="|$\widehat \mu-T\widehat \mu$|")
         for ax in axs: ax.set(xlabel=f"Z[{dims[0]+1}]", ylabel=f"Z[{dims[1]+1}]")
         plt.subplots_adjust(bottom=0.35)
         plt.figtext(0.5, 0.02, self._footer(), ha="center", fontsize=10, wrap=True)
