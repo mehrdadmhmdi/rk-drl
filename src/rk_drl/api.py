@@ -37,7 +37,7 @@ def estimate_embedding(
     """Call the core RK_DRL and return (B, history_obj, history_be, pre)."""
     return RK_DRL(
         s0=s0, s1=s1, a0=a0, a1=a1,
-        s_star=s_star, a_star=a_star, r=r0,
+        s_star=s_star, a_star=a_star, r=r,
         target_p_choice=target_p_choice, target_p_params=target_p_params,
         nu=nu, length_scale=length_scale, sigma=sigma,
         gamma_val=gamma_val, lambda_reg=lambda_reg,
